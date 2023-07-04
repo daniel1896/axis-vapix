@@ -9,10 +9,10 @@ This library is designed to provide control and configuration of Axis cameras us
 **ONVIF (Open Network Video Interface Forum)** is a global and open industry forum with the goal of facilitating the development and use of a global open standard for the interface of physical IP-based security products. ONVIF creates a standard for how IP products within video surveillance and other physical security areas can communicate with each other. ONVIF is an organization started in 2008 by Axis Communications, Bosch Security Systems and Sony.
 
 ## Installation
-Install the package through pip: 
+Install the package through setup.py
 
-````
-pip install sensecam-control
+````bash
+python setup.py install
 ````
 ## Execution
 

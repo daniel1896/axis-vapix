@@ -4,12 +4,17 @@ Library for control AXIS PTZ cameras using Vapix
 import time
 import logging
 import sys
+import urllib3
 import requests
 from requests.auth import HTTPDigestAuth
 from bs4 import BeautifulSoup
 
+# Disable the warning
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 logging.basicConfig(filename='vapix.log', filemode='w', level=logging.DEBUG)
 logging.info('Started')
+
 
 # pylint: disable=R0904
 
@@ -41,9 +46,31 @@ class CameraControl:
             result.update(dictionary)
         return result
 
-    def _camera_command(self, payload: dict):
+    def _command(self, url: str, payload: dict):
         """
         Function used to send commands to the camera
+        Args:
+            url: url for the camera
+            payload: arguments dictionary
+
+        Returns:
+            Returns the response from the device to the command sent
+
+        """
+        resp = requests.get(url, auth=HTTPDigestAuth(self.__cam_user, self.__cam_password),
+                            params=payload, verify=False)
+
+        if (resp.status_code != 200) and (resp.status_code != 204):
+            soup = BeautifulSoup(resp.text, features="lxml")
+            logging.error('%s', soup.get_text())
+            if resp.status_code == 401:
+                sys.exit(1)
+
+        return resp
+
+    def _ptz_command(self, payload: dict):
+        """
+        Function used to send ptz commands to the camera
         Args:
             payload: argument dictionary for camera control
 
@@ -59,20 +86,10 @@ class CameraControl:
             'timestamp': int(time.time())
         }
 
-        payload2 = CameraControl.__merge_dicts(payload, base_q_args)
-
+        merged_args = CameraControl.__merge_dicts(payload, base_q_args)
         url = 'http://' + self.__cam_ip + '/axis-cgi/com/ptz.cgi'
 
-        resp = requests.get(url, auth=HTTPDigestAuth(self.__cam_user, self.__cam_password),
-                            params=payload2)
-
-        if (resp.status_code != 200) and (resp.status_code != 204):
-            soup = BeautifulSoup(resp.text, features="lxml")
-            logging.error('%s', soup.get_text())
-            if resp.status_code == 401:
-                sys.exit(1)
-
-        return resp
+        return self._command(url, merged_args)
 
     def absolute_move(self, pan: float = None, tilt: float = None, zoom: int = None,
                       speed: int = None):
@@ -89,7 +106,7 @@ class CameraControl:
             Returns the response from the device to the command sent.
 
         """
-        return self._camera_command({'pan': pan, 'tilt': tilt, 'zoom': zoom, 'speed': speed})
+        return self._ptz_command({'pan': pan, 'tilt': tilt, 'zoom': zoom, 'speed': speed})
 
     def continuous_move(self, pan: int = None, tilt: int = None, zoom: int = None):
         """
@@ -105,7 +122,7 @@ class CameraControl:
 
         """
         pan_tilt = str(pan) + "," + str(tilt)
-        return self._camera_command({'continuouspantiltmove': pan_tilt, 'continuouszoommove': zoom})
+        return self._ptz_command({'continuouspantiltmove': pan_tilt, 'continuouszoommove': zoom})
 
     def relative_move(self, pan: float = None, tilt: float = None, zoom: int = None,
                       speed: int = None):
@@ -122,7 +139,7 @@ class CameraControl:
             Returns the response from the device to the command sent.
 
         """
-        return self._camera_command({'rpan': pan, 'rtilt': tilt, 'rzoom': zoom, 'speed': speed})
+        return self._ptz_command({'rpan': pan, 'rtilt': tilt, 'rzoom': zoom, 'speed': speed})
 
     def stop_move(self):
         """
@@ -133,7 +150,7 @@ class CameraControl:
             Returns the response from the device to the command sent
 
         """
-        return self._camera_command({'continuouspantiltmove': '0,0', 'continuouszoommove': 0})
+        return self._ptz_command({'continuouspantiltmove': '0,0', 'continuouszoommove': 0})
 
     def center_move(self, pos_x: int = None, pos_y: int = None, speed: int = None):
         """
@@ -151,7 +168,7 @@ class CameraControl:
 
         """
         pan_tilt = str(pos_x) + "," + str(pos_y)
-        return self._camera_command({'center': pan_tilt, 'speed': speed})
+        return self._ptz_command({'center': pan_tilt, 'speed': speed})
 
     def area_zoom(self, pos_x: int = None, pos_y: int = None, zoom: int = None,
                   speed: int = None):
@@ -169,7 +186,7 @@ class CameraControl:
 
         """
         xyzoom = str(pos_x) + "," + str(pos_y) + "," + str(zoom)
-        return self._camera_command({'areazoom': xyzoom, 'speed': speed})
+        return self._ptz_command({'areazoom': xyzoom, 'speed': speed})
 
     def move(self, position: str = None, speed: float = None):
         """
@@ -183,7 +200,7 @@ class CameraControl:
             Returns the response from the device to the command sent
 
         """
-        return self._camera_command({'move': str(position), 'speed': speed})
+        return self._ptz_command({'move': str(position), 'speed': speed})
 
     def go_home_position(self, speed: int = None):
         """
@@ -196,7 +213,7 @@ class CameraControl:
             Returns the response from the device to the command sent
 
         """
-        return self._camera_command({'move': 'home', 'speed': speed})
+        return self._ptz_command({'move': 'home', 'speed': speed})
 
     def get_ptz(self):
         """
@@ -206,7 +223,7 @@ class CameraControl:
             Returns a tuple with the position of the camera (P, T, Z)
 
         """
-        resp = self._camera_command({'query': 'position'})
+        resp = self._ptz_command({'query': 'position'})
         pan = float(resp.text.split()[0].split('=')[1])
         tilt = float(resp.text.split()[1].split('=')[1])
         zoom = float(resp.text.split()[2].split('=')[1])
@@ -226,7 +243,7 @@ class CameraControl:
             Returns the response from the device to the command sent
 
         """
-        return self._camera_command({'gotoserverpresetname': name, 'speed': speed})
+        return self._ptz_command({'gotoserverpresetname': name, 'speed': speed})
 
     def go_to_server_preset_no(self, number: int = None, speed: int = None):
         """
@@ -240,7 +257,7 @@ class CameraControl:
             Returns the response from the device to the command sent
 
         """
-        return self._camera_command({'gotoserverpresetno': number, 'speed': speed})
+        return self._ptz_command({'gotoserverpresetno': number, 'speed': speed})
 
     def go_to_device_preset(self, preset_pos: int = None, speed: int = None):
         """
@@ -255,7 +272,7 @@ class CameraControl:
             Returns the response from the device to the command sent
 
         """
-        return self._camera_command({'gotodevicepreset': preset_pos, 'speed': speed})
+        return self._ptz_command({'gotodevicepreset': preset_pos, 'speed': speed})
 
     def list_preset_device(self):
         """
@@ -265,7 +282,7 @@ class CameraControl:
             Returns the list of presets positions stored on the device.
 
         """
-        return self._camera_command({'query': 'presetposcam'})
+        return self._ptz_command({'query': 'presetposcam'})
 
     def list_all_preset(self):
         """
@@ -275,12 +292,12 @@ class CameraControl:
             Returns the list of all presets positions.
 
         """
-        resp = self._camera_command({'query': 'presetposall'})
+        resp = self._ptz_command({'query': 'presetposall'})
         soup = BeautifulSoup(resp.text, features="lxml")
         resp_presets = soup.text.split('\n')
         presets = []
 
-        for i in range(1, len(resp_presets)-1):
+        for i in range(1, len(resp_presets) - 1):
             preset = resp_presets[i].split("=")
             presets.append((int(preset[0].split('presetposno')[1]), preset[1].rstrip('\r')))
 
@@ -296,7 +313,7 @@ class CameraControl:
             Returns the response from the device to the command sent.
 
         """
-        return self._camera_command({'speed': speed})
+        return self._ptz_command({'speed': speed})
 
     def get_speed(self):
         """
@@ -306,7 +323,7 @@ class CameraControl:
             Returns the camera's move value.
 
         """
-        resp = self._camera_command({'query': 'speed'})
+        resp = self._ptz_command({'query': 'speed'})
         return int(resp.text.split()[0].split('=')[1])
 
     def info_ptz_comands(self):
@@ -317,5 +334,5 @@ class CameraControl:
             Success (OK and system log content text) or Failure (error and description).
 
         """
-        resp = self._camera_command({'info': '1'})
+        resp = self._ptz_command({'info': '1'})
         return resp.text

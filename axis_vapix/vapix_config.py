@@ -22,6 +22,31 @@ class CameraConfiguration:
         self.cam_user = user
         self.cam_password = password
 
+    def get_parameters(self, group=None):
+        """
+        Get parameters from camera
+
+        Args:
+            group (str): group of parameters
+            param (str): parameter
+
+        Returns:
+            dict: parameters
+
+        """
+        url = 'http://' + self.cam_ip + '/axis-cgi/param.cgi?action=list'
+        if group is not None:
+            url += '&group=' + group
+
+        resp = requests.get(url, auth=HTTPDigestAuth(self.cam_user, self.cam_password))
+
+        if resp.status_code == 200:
+            return resp.text
+
+        text = str(resp)
+        text += str(resp.text)
+        return text
+
     def factory_reset_default(self):  # 5.1.3
         """
         Reload factory default. All parameters except Network.BootProto, Network.IPAddress,
@@ -30,7 +55,6 @@ class CameraConfiguration:
 
         Returns:
             Success (OK) or Failure (Settings or syntax are probably incorrect).
-
 
         """
         url = 'http://' + self.cam_ip + '/axis-cgi/factorydefault.cgi'
