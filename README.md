@@ -1,12 +1,9 @@
-# Axis Vapix/Onvif Python
+# Axis Vapix Python
 
-This library is designed to provide control and configuration of Axis cameras using the Onvif and Vapix protocol.
+This library is designed to provide control and configuration of Axis cameras using the Vapix protocol.
 
 **VAPIX®** is Axis' own open API (Application Programming Interface) using standard protocols enabling integration into a wide range of solutions on different platforms.  
-
-**VAPIX®** provides functionality for requesting images, controlling Pan Tilt Zoom, controlling Input and Output ports, retrieve and control internal settings, to manage Events, record and retrieve video to/from the SD card, and much, much more. Almost all functionality available in Axis products can be controlled using VAPIX®, some functions are even only supported via VAPIX®, for example, to retrieve Bitmap images.
-
-**ONVIF (Open Network Video Interface Forum)** is a global and open industry forum with the goal of facilitating the development and use of a global open standard for the interface of physical IP-based security products. ONVIF creates a standard for how IP products within video surveillance and other physical security areas can communicate with each other. ONVIF is an organization started in 2008 by Axis Communications, Bosch Security Systems and Sony.
+It provides functionality for requesting images, controlling Pan Tilt Zoom, controlling Input and Output ports, retrieve and control internal settings, to manage Events, record and retrieve video to/from the SD card, and much, much more. Almost all functionality available in Axis products can be controlled using VAPIX®, some functions are even only supported via VAPIX®, for example, to retrieve Bitmap images.
 
 ## Installation
 Install the package through setup.py
@@ -16,28 +13,24 @@ python setup.py install
 ````
 ## Execution
 
-Example of use:
+To use the library, import the axis_vapix module and instantiate the Camera class.
 
+````python
+from axis_vapix import Camera
+
+camera = Camera("<ip_address>", "<username>", "<password>")
 ````
-from sensecam_control import vapix_control
-from sensecam_control import onvif_control
 
+Then, you can use the functions to control and configure the camera. For example, to move the camera to the (0,0,0) position:
 
-Camera1 = vapix_control.CameraControl(<ip>, <login>, <password>)
-Camera2 = onvif_control.CameraControl(<ip>, <login>, <password>)
-
-Camera1.absolute_move(10, 20, 1)
-Camera1.absolute_move(10, 20, 1, 50)
-
-Camera2.absolute_move(0.02, 0.60, 0.0)
-Camera2.relative_move(0.3, -0.2, 0)
-
+````python
+camera.absolute_move(pan=0, tilt=0, zoom=0, speed=100)
 ````
 
 
 
 ## Functions
-### Vapix Control
+### Control Functions
 
 * `absolute_move(pan, tilt, zoom, speed)` - Operation to move pan, tilt or zoom to a absolute destination.
     - pan (float): pans the device relative to the (0,0) position. Values (-180.0 … 180.0)
@@ -99,7 +92,7 @@ Camera2.relative_move(0.3, -0.2, 0)
 
 * `get_speed()` - Requests the camera's speed of movement.
 
-### Vapix Configuration
+### Configuration Functions
 * `factory_reset_default()` - Reload factory default. All parameters except Network.BootProto, Network.IPAddress, Network. SubnetMask, Network.Broadcast and Network.DefaultRouter are set to their factory default values.
 
 * `hard_factory_reset_default()` - Reload factory default. All parameters are set to their factory default value.
@@ -265,107 +258,3 @@ Camera2.relative_move(0.3, -0.2, 0)
 
 * `auto_iris(iris)` - Enable or disable automatic iris control.
     - iris (str): iris value (on, off)
-
-### Onvif Control
-* `absolute_move(pan, tilt, zoom)` - Operation to move pan, tilt or zoom to a absolute destination.
-    - pan (float): pans the device relative to the (0,0) position.
-    - tilt (float): tilts the device relative to the (0,0) position.
-    - zoom (float): zooms the device n steps.
-
-* `continuous_move(pan, tilt, zoom)` - Operation for continuous Pan/Tilt and Zoom movements.
-    - pan (float): speed of movement of Pan.
-    - tilt (float): speed of movement of Tilt.
-    - zoom (float): speed of movement of Zoom.
-    
-* `relative_move(pan, tilt, zoom)` - Operation for Relative Pan/Tilt and Zoom Move.
-    - pan (float): pans the device n degrees relative to the current position.
-    - tilt (float): tilts the device n degrees relative to the current position.
-    - zoom (float): zooms the device n steps relative to the current position.
-    
-* `stop_move()` - Operation to stop ongoing pan, tilt and zoom movements of absolute relative and continuous type.
-
-* `set_home_position()` - Operation to save current position as the home position.
-    
-* `go_home_position()` - Operation to move the PTZ device to it's "home" position.
-   
-* `get_ptz()` - Operation to request PTZ status.
-
-* `set_preset(preset_name)` - The command saves the current device position parameters.
-    - preset_name (str): Name for preset.
-    
-* `get_preset()` - Operation to request all PTZ presets.
-
-* `get_preset_complete()` - Operation to request all PTZ presets.
-
-* `remove_preset(preset_name)` - Operation to remove a PTZ preset.
-    - preset_name (str): Preset name.
-    
-* `go_to_preset(preset_position)` - Operation to go to a saved preset position.
-    - preset_position (str): preset name.
-
-### Onvif Config
-* `set_user(name, password, user_level)` - This operation updates the settings for one or several users on a device for authentication purposes.
-    - name (str): user name.
-    - password (str): user password.
-    - user_level (str): user level.
-    
-* `create_user(username, password, user_level)` - This operation creates new device users and corresponding credentials on a device for authentication.
-    - username (str): user name.
-    - password (str): user password.
-    - user_level (str): user level.
-    
-* `delete_users(username)` - This operation deletes users on a device.
-    - username (str): user name.
-    
-* `get_users()` - This operation lists the registered users and corresponding credentials on a device.
-    
-* `set_discovery_mode(discovery_mode)` - This operation sets the discovery mode operation of a device.
-    - discovery_mode (str): Indicator of discovery mode. (Discoverable, NonDiscoverable)
-    
-* `set_dns(type_dns, ipv4, ipv6)` - This operation sets the DNS settings on a device.
-    - type_dns (str): Indicates if the address is an IPv4 or IPv6 address.
-    - ipv4 (str): IPv4 address.
-    - ipv6 (str): IPv6 address.
-            
-* `get_hostname()` - This operation is used to get the hostname from a device.
-
-* `set_hostname(new_hostname)` - This operation sets the hostname on a device.
-    - new_hostname (str): new hostname.
-
-* ` get_ip_address_filter()` - This operation gets the IP address filter settings from a device.
-
-* `get_device_information()` - This operation gets basic device information from the device.
-
-* `get_discovery_mode()` -This operation gets the discovery mode of a device.
-
-* `get_dns()` - This operation gets the DNS settings from a device.
-
-* `get_dynamic_dns()` - This operation gets the dynamic DNS settings from a device.
-
-* `get_network_default_gateway()` - This operation gets the default gateway settings from a device.
-
-* `get_network_interfaces()` - This operation gets the network interface configuration from a device.
-
-* `get_network_protocols()` - This operation gets defined network protocols from a device.
-
-* `get_ntp()` - This operation gets the NTP settings from a device.
-
-* `get_system_date_and_time()` - This operation gets the device system date and time.
-
-* `get_wsdl_url()` - Request a URL that can be used to retrieve the complete schema and WSDL definitions of a device.
-    
-* `system_reboot()` - This operation reboots the device.
-
-* `start_system_restore()` - This operation initiates a system restore from backed up configuration data using the HTTP POST mechanism.
-
-* `get_profiles()` - This command lists all configured video profiles in a device.
-
-* `get_audio_decoder_configurations()` - This operation requests decoder configuration.
-
-* `get_video_analytics_configurations()` - This operation fetches the video analytics configuration.
-
-* `get_video_encoder_configurations()` - This operation request the encoder configuration.
-
-* `get_video_source_configurations()` - This operation request the video source configuration.
-
-* `get_video_sources()` - This operation lists all available physical video inputs of the device.
